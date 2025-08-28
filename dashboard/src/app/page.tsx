@@ -86,7 +86,6 @@ export default function Home() {
       
       const data = await res.json();
       setWeather(data);
-      console.log(data);
     } catch (err) {
       console.error("Error fetching weather data:", err);
       setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการค้นหา");
@@ -115,7 +114,6 @@ export default function Home() {
       
       const data = await res.json();
       setNews(data);
-      console.log(data);
     } catch (err) {
       console.error("Error fetching currency data:", err);
       setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการค้นหา");
@@ -149,17 +147,26 @@ export default function Home() {
   }, []);
 
   const fetchHolidays = async () => {
-    try{
-    const API_KEY = process.env.NEXT_PUBLIC_HOLIDAYS_API_KEY;
-    const res = await fetch(`https://calendarific.com/api/v2/holidays?&api_key=${API_KEY}&country=TH&year=2025`)
-    if(!res.ok){
-      throw new Error("ไม่พบข้อมูลวันหยุด");
+    try {
+      const API_KEY = process.env.NEXT_PUBLIC_HOLIDAYS_API_KEY;
+      if (!API_KEY) {
+        console.error("Holiday API key is missing!");
+        return;
+      }
+      const res = await fetch(`https://calendarific.com/api/v2/holidays?&api_key=${API_KEY}&country=TH&year=2025`);
+      if (!res.ok) {
+        throw new Error("ไม่พบข้อมูลวันหยุด");
+      }
+      const data = await res.json();
+      console.log("Loaded holidays:", data.response?.holidays?.length || 0);
+      if (data.response?.holidays) {
+        setHolidays(data.response.holidays);
+      } else {
+        console.error("No holidays data in response:", data);
+      }
+    } catch (err) { 
+      console.error("Error fetching holidays data:", err);
     }
-    const data = await res.json();
-    setHolidays(data.response.holidays);
-  }catch(err){ 
-    console.error("Error fetching holidays data:", err);
-  }
 }
 
   const handleWeatherSubmit = (e: React.FormEvent) => {
@@ -510,9 +517,9 @@ export default function Home() {
         </div>
       {/* News Card */}
       {/* Currency and holidays Card */}
-      <div className="my-10 flex justify-between items-center w-full flex-wrap gap-10">
-      <div className="mx-auto relative">
-        <div className="bg-white backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 relative overflow-hidden">
+      <div className="my-10 flex flex-col lg:flex-row justify-center items-stretch w-full gap-10">
+      <div className="flex-1 min-w-[300px] max-w-[600px] mx-auto relative">
+        <div className="h-full bg-white backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 relative overflow-hidden">
           {/* Glassmorphism effect overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-3xl"></div>
           
@@ -618,54 +625,82 @@ export default function Home() {
           </div>
         </div>
       </div>
-    <div className="flex flex-col items-center justify-center bg-white text-slate-700 p-6">
-      <div className="w-full">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          📅 ปฏิทินวันหยุด 2025 (TH)
-        </h1>
+        <div className="flex-1 min-w-[300px] flex flex-col items-center justify-center bg-gradient-to-br from-white via-white to-purple-50 text-slate-700 p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,transparent,black,transparent)]"></div>
+          <div className="w-full max-w-[600px] relative z-10">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-violet-400 to-indigo-400 rounded-2xl mb-4 shadow-lg transform hover:scale-105 transition-all duration-300">
+                <span className="text-2xl">📅</span>
+              </div>
+              <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
+                ปฏิทินวันหยุด 2025
+              </h1>
+              <p className="text-slate-500">Thailand Holidays</p>
+            </div>
 
-        {/* Calendar */}
-        <div className="bg-blue rounded-2xl shadow-lg p-4 flex items-center justify-center">
-          <Calendar
-            onClickDay={(value) => setSelectedDate(value)}
-            tileClassName={({ date }) =>
-              isHoliday(date)
-                ? "bg-red-500 text-blue rounded-md hover:opacity-90"
-                : ""
-            }
-            className="w-full border-0 [&_.react-calendar__tile]:rounded-md [&_.react-calendar__tile]:p-2 [&_.react-calendar__tile]:text-sm [&_.react-calendar__tile--active]:bg-blue-500 [&_.react-calendar__tile--active]:text-white [&_.react-calendar__tile--now]:bg-slate-200"
-          />
-        </div>
+            {/* Calendar */}
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/60 flex justify-center items-center">
+              <Calendar
+                onClickDay={(value) => setSelectedDate(value)}
+                tileClassName={({ date }) =>
+                  isHoliday(date) ? "holiday" : ""
+                }
+                className="w-full border-0 [&_.react-calendar__navigation]:mb-6 
+                [&_.react-calendar__navigation__arrow]:text-2xl [&_.react-calendar__navigation__arrow]:text-slate-600 [&_.react-calendar__navigation__arrow]:hover:text-violet-500
+                [&_.react-calendar__navigation__label]:text-lg [&_.react-calendar__navigation__label]:font-semibold [&_.react-calendar__navigation__label]:text-slate-700
+                [&_.react-calendar__month-view__weekdays]:mb-4 [&_.react-calendar__month-view__weekdays__weekday]:font-medium [&_.react-calendar__month-view__weekdays__weekday]:text-slate-500
+                [&_.react-calendar__tile]:rounded-lg [&_.react-calendar__tile]:p-2 [&_.react-calendar__tile]:text-sm [&_.react-calendar__tile]:font-medium
+                [&_.react-calendar__tile--active]:bg-gradient-to-r [&_.react-calendar__tile--active]:from-violet-500 [&_.react-calendar__tile--active]:to-indigo-500 [&_.react-calendar__tile--active]:text-white
+                [&_.react-calendar__tile--now]:bg-slate-100 [&_.react-calendar__tile--now]:text-slate-600"
+              />
+            </div>
 
-        {/* Holiday detail */}
-        {selectedDate && (
-          <div className="mt-6 bg-slate-50 rounded-xl shadow p-5">
-            <h2 className="font-semibold text-lg mb-2">
-              {selectedDate.toDateString()}
-            </h2>
-            {holidays
-              .filter(
-                (h) =>
-                  new Date(h.date.iso).toDateString() ===
-                  selectedDate.toDateString()
-              )
-              .map((h, idx) => (
-                <div key={idx} className="mb-3">
-                  <p className="font-bold text-slate-800">🎉 {h.name}</p>
-                  <p className="text-sm text-slate-600">{h.description}</p>
+            {/* Holiday detail */}
+            {selectedDate && (
+              <div className="mt-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/60 transform transition-all duration-300">
+                <h2 className="font-semibold text-lg mb-4 flex items-center gap-2 text-slate-700">
+                  <span className="w-8 h-8 bg-gradient-to-r from-violet-100 to-indigo-100 rounded-lg flex items-center justify-center">
+                    📅
+                  </span>
+                  {selectedDate.toDateString()}
+                </h2>
+                <div className="space-y-4">
+                  {holidays
+                    .filter(
+                      (h) =>
+                        new Date(h.date.iso).toDateString() ===
+                        selectedDate.toDateString()
+                    )
+                    .map((h, idx) => (
+                      <div key={idx} className="bg-gradient-to-r from-violet-50 to-indigo-50 rounded-xl p-4 transition-all duration-300 hover:shadow-md">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-violet-400 to-indigo-400 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <span className="text-white text-lg">🎉</span>
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-800 mb-1">{h.name}</p>
+                            <p className="text-sm text-slate-600 leading-relaxed">{h.description}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  {holidays.filter(
+                    (h) =>
+                      new Date(h.date.iso).toDateString() ===
+                      selectedDate.toDateString()
+                  ).length === 0 && (
+                    <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3">
+                      <div className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center">
+                        <span className="text-slate-600">📌</span>
+                      </div>
+                      <p className="text-slate-600">ไม่มีวันหยุดในวันนี้</p>
+                    </div>
+                  )}
                 </div>
-              ))}
-            {holidays.filter(
-              (h) =>
-                new Date(h.date.iso).toDateString() ===
-                selectedDate.toDateString()
-            ).length === 0 && (
-              <p className="text-slate-500">ไม่มีวันหยุดในวันนี้</p>
+              </div>
             )}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
       </div>
       {/* Currency and holiday Card */}
       </div>

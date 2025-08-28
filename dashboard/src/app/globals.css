@@ -28,24 +28,46 @@ body {
 .react-calendar {
   border: none;
   font-family: inherit;
+  padding: 15px;
 }
 .react-calendar__tile {
   border-radius: 0.5rem;
   padding: 0.5rem;
   font-size: 0.875rem;
   transition: all 0.2s ease-in-out;
+  position: relative;
+  margin: 5px;
 }
+
+/* Style for holiday dates */
+.react-calendar__tile.holiday {
+  background: linear-gradient(to right, #ef4444, #f43f5e) !important;
+  color: white !important;
+}
+
+.react-calendar__tile.holiday:hover {
+  opacity: 0.9;
+}
+
+/* Style for active (selected) date */
 .react-calendar__tile--active {
-  background-color: #4f46e5 !important;
-  color: rgb(255, 255, 255) !important;
+  background: linear-gradient(to right, #6366f1, #4f46e5) !important;
+  color: white !important;
 }
+
 .react-calendar__tile--active:hover {
-  background-color: #4338ca !important;
+  opacity: 0.9;
 }
+
+/* Style for current date */
 .react-calendar__tile--now {
-  background-color: #e2e8f0;
+  background-color: #e2e8f0 !important;
+  font-weight: bold;
 }
+
+/* Navigation buttons */
 .react-calendar__navigation button:hover,
 .react-calendar__navigation button:focus {
   background-color: #f1f5f9;
+  border-radius: 0.5rem;
 }
