@@ -1,6 +1,8 @@
 'use client';
 import { useState,useEffect } from "react";
 import { Search, CloudRain, Sun, Cloud, Wind, Droplets, Thermometer, MapPin } from 'lucide-react'
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
 
 
 interface NewsData {
@@ -35,6 +37,15 @@ interface WeatherData {
   }
 }
 
+type Currency = "USD" | "EUR" | "GBP" | "THB";
+type CurrencyList = Record<string, string>;
+
+type Holiday = {
+  name: string;
+  date: { iso: string };
+  description: string;
+  type: string[];
+};
 
 export default function Home() {
 
@@ -46,6 +57,15 @@ export default function Home() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [amount, setAmount] = useState<number>(1);
+  const [fromCurrency, setFromCurrency] = useState<Currency>("USD");
+  const [currencies, setCurrencies] = useState<CurrencyList>({});
+  const [toCurrency, setToCurrency] = useState<Currency>("THB");
+  const [result, setResult] = useState<number | null>(null);
+
+  const [holidays, setHolidays] = useState<Holiday[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const fetchWeatherData = async () => {
     if (!city.trim()) return;
@@ -105,6 +125,42 @@ export default function Home() {
     }
   };
 
+  const fetchCurrencyData = async () => {
+    try{
+      const res = await fetch(`https://api.frankfurter.app/latest?amount=${amount}&from=${fromCurrency}&to=${toCurrency}`);
+      if(!res.ok){
+        throw new Error("ไม่พบข้อมูลเงินที่ค้นหา");
+      }
+      const data = await res.json();
+      const rate = data.rates[toCurrency];
+      setResult(rate);
+    }catch(err){
+    console.error("Error fetching currency data:", err);
+    }
+  }
+
+  useEffect(() => {
+    const fetchCurrencies = async () => {
+      const res = await fetch("https://api.frankfurter.app/currencies");
+      const data = await res.json();
+      setCurrencies(data);
+    };
+    fetchCurrencies();
+  }, []);
+
+  const fetchHolidays = async () => {
+    try{
+    const API_KEY = process.env.NEXT_PUBLIC_HOLIDAYS_API_KEY;
+    const res = await fetch(`https://calendarific.com/api/v2/holidays?&api_key=${API_KEY}&country=TH&year=2025`)
+    if(!res.ok){
+      throw new Error("ไม่พบข้อมูลวันหยุด");
+    }
+    const data = await res.json();
+    setHolidays(data.response.holidays);
+  }catch(err){ 
+    console.error("Error fetching holidays data:", err);
+  }
+}
 
   const handleWeatherSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,10 +172,18 @@ export default function Home() {
     fetchNewsData();
   };
 
+  const isHoliday = (date: Date) => {
+    return holidays.some(
+      (h) => new Date(h.date.iso).toDateString() === date.toDateString()
+    );
+  };
+
   useEffect(() => {
     fetchWeatherData();
     fetchNewsData();
-  }, []); 
+    fetchCurrencyData();
+    fetchHolidays();
+  }, [amount, fromCurrency, toCurrency]); 
 
   const getTempIcon = (temp: number) => { 
     if (temp > 25) return <Sun className="w-6 h-6 text-yellow-500" />
@@ -149,7 +213,7 @@ export default function Home() {
         </div>
 
         {/* Search Card */}
-        <div className="bg-slate-800 backdrop-blur-lg rounded-3xl border border-white/80 shadow-xl p-6 md:p-8 mb-8">
+        <div className=" backdrop-blur-lg rounded-3xl border border-white/80 shadow-xl p-6 md:p-8 mb-8">
           <form onSubmit={handleWeatherSubmit} className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -445,6 +509,165 @@ export default function Home() {
           )}
         </div>
       {/* News Card */}
+      {/* Currency and holidays Card */}
+      <div className="my-10 flex justify-between items-center w-full flex-wrap gap-10">
+      <div className="mx-auto relative">
+        <div className="bg-white backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-8 relative overflow-hidden">
+          {/* Glassmorphism effect overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-white/5 rounded-3xl"></div>
+          
+          <div className="relative z-10">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-400 to-pink-400 rounded-2xl mb-4 shadow-lg">
+                <span className="text-2xl">💱</span>
+              </div>
+              <h1 className="text-3xl font-bold text-slate-700 mb-2">Exchange Rate</h1>
+              <p className="text-slate-700/70">Currency Converter</p>
+            </div>
+
+            <div className="space-y-8">
+              {/* Amount Input */}
+              <div>
+                <label className="block text-slate-700/80 font-medium mb-3 text-sm uppercase tracking-wide">Amount</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    className="w-full text-3xl font-bold text-center bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-4 text-slate-700 placeholder-white/50 focus:bg-white/20 focus:border-white/40 focus:outline-none transition-all duration-300 shadow-lg"
+                    placeholder="0.00"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-2xl pointer-events-none"></div>
+                </div>
+              </div>
+
+              {/* Currency Selection */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-slate-700/80 font-medium mb-3 text-sm uppercase tracking-wide">From</label>
+                  <div className="relative">
+                    <select
+                      value={fromCurrency}
+                      onChange={(e) => setFromCurrency(e.target.value as Currency)}
+                      className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-slate-700 font-medium focus:bg-white/20 focus:border-white/40 focus:outline-none transition-all duration-300 appearance-none cursor-pointer shadow-lg"
+                    >
+                      {Object.entries(currencies).map(([code, name]) => (
+                        <option key={code} value={code} className="bg-gray-800">
+                          {code} — {name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 pointer-events-none">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="block text-slate-700/80 font-medium mb-3 text-sm uppercase tracking-wide">To</label>
+                  <div className="relative">
+                    <select
+                      value={toCurrency}
+                      onChange={(e) => setToCurrency(e.target.value as Currency)}
+                      className="w-full p-4 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl text-slate-700 font-medium focus:bg-white/20 focus:border-white/40 focus:outline-none transition-all duration-300 appearance-none cursor-pointer shadow-lg"
+                    >
+                      {Object.entries(currencies).map(([code, name]) => (
+                        <option key={code} value={code} className="bg-gray-800">
+                          {code} — {name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white/60 pointer-events-none">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Conversion Arrow */}
+              <div className="flex justify-center">
+                <div className="flex items-center justify-center w-12 h-12 bg-gradient-to-r from-emerald-400 to-cyan-400 rounded-full shadow-lg transform hover:scale-110 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Result */}
+              {result !== null && (
+                <div className="relative">
+                  <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 backdrop-blur-sm rounded-2xl border border-emerald-400/30 p-6 text-center shadow-xl">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-2xl"></div>
+                    <div className="relative z-10">
+                      <div className="text-sm text-slate-700/60 mb-2 uppercase tracking-wide">Converted Amount</div>
+                      <div className="text-3xl font-bold text-slate-700 mb-1">
+                        {result.toFixed(2)} <span className="text-emerald-500">{toCurrency}</span>
+                      </div>
+                      <div className="text-slate-700/50 text-sm">
+                        {amount} {fromCurrency} equals
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    <div className="flex flex-col items-center justify-center bg-white text-slate-700 p-6">
+      <div className="w-full">
+        <h1 className="text-3xl font-bold text-center mb-8">
+          📅 ปฏิทินวันหยุด 2025 (TH)
+        </h1>
+
+        {/* Calendar */}
+        <div className="bg-blue rounded-2xl shadow-lg p-4 flex items-center justify-center">
+          <Calendar
+            onClickDay={(value) => setSelectedDate(value)}
+            tileClassName={({ date }) =>
+              isHoliday(date)
+                ? "bg-red-500 text-blue rounded-md hover:opacity-90"
+                : ""
+            }
+            className="w-full border-0 [&_.react-calendar__tile]:rounded-md [&_.react-calendar__tile]:p-2 [&_.react-calendar__tile]:text-sm [&_.react-calendar__tile--active]:bg-blue-500 [&_.react-calendar__tile--active]:text-white [&_.react-calendar__tile--now]:bg-slate-200"
+          />
+        </div>
+
+        {/* Holiday detail */}
+        {selectedDate && (
+          <div className="mt-6 bg-slate-50 rounded-xl shadow p-5">
+            <h2 className="font-semibold text-lg mb-2">
+              {selectedDate.toDateString()}
+            </h2>
+            {holidays
+              .filter(
+                (h) =>
+                  new Date(h.date.iso).toDateString() ===
+                  selectedDate.toDateString()
+              )
+              .map((h, idx) => (
+                <div key={idx} className="mb-3">
+                  <p className="font-bold text-slate-800">🎉 {h.name}</p>
+                  <p className="text-sm text-slate-600">{h.description}</p>
+                </div>
+              ))}
+            {holidays.filter(
+              (h) =>
+                new Date(h.date.iso).toDateString() ===
+                selectedDate.toDateString()
+            ).length === 0 && (
+              <p className="text-slate-500">ไม่มีวันหยุดในวันนี้</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+      </div>
+      {/* Currency and holiday Card */}
       </div>
     </div>
   );
