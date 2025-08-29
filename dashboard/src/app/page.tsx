@@ -81,7 +81,7 @@ export default function Home() {
       );
       
       if (!res.ok) {
-        throw new Error("CAnt find the city");
+        throw new Error("Cant find the city");
       }
       
       const data = await res.json();
@@ -109,7 +109,7 @@ export default function Home() {
       );
       
       if (!res.ok) {
-        throw new Error("ไม่พบข้อมูลเงินที่ค้นหา");
+        throw new Error("Failed to fetch the data");
       }
       
       const data = await res.json();
