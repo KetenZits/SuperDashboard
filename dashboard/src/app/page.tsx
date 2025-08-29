@@ -80,9 +80,6 @@ export default function Home() {
         `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric`
       );
       
-      if (!res.ok) {
-        throw new Error("Cant find the city");
-      }
       
       const data = await res.json();
       setWeather(data);
@@ -108,9 +105,6 @@ export default function Home() {
         `https://newsapi.org/v2/top-headlines?category=${encodeURIComponent(cetagory)}&country=us&apiKey=${API_KEY}`
       );
       
-      if (!res.ok) {
-        throw new Error("Failed to fetch the data");
-      }
       
       const data = await res.json();
       setNews(data);
