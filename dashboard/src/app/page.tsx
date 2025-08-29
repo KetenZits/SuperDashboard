@@ -81,14 +81,14 @@ export default function Home() {
       );
       
       if (!res.ok) {
-        throw new Error("ไม่พบข้อมูลเมืองที่ค้นหา");
+        throw new Error("CAnt find the city");
       }
       
       const data = await res.json();
       setWeather(data);
     } catch (err) {
       console.error("Error fetching weather data:", err);
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการค้นหา");
+      setError(err instanceof Error ? err.message : "Failed to fetch weather data");
       setWeather(null);
     } finally {
       setLoading(false);
@@ -116,7 +116,7 @@ export default function Home() {
       setNews(data);
     } catch (err) {
       console.error("Error fetching currency data:", err);
-      setError(err instanceof Error ? err.message : "เกิดข้อผิดพลาดในการค้นหา");
+      setError(err instanceof Error ? err.message : "Failed to fetch news data");
       setNews(null);
     } finally {
       setLoading(false);
@@ -207,7 +207,7 @@ export default function Home() {
   }
 
   return (
-    <div className="flex flex-col flex-wrap items-center justify-center p-6 h-auto bg-slate-800">
+    <div className="flex flex-col flex-wrap items-center justify-center p-6 h-auto bg-white">
       <div className="container mx-auto">
       {/* Weather Card */}
         <div className="w-full mx-auto my-10  bg-white rounded-4xl p-5">
@@ -633,7 +633,7 @@ export default function Home() {
                 <span className="text-2xl">📅</span>
               </div>
               <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                ปฏิทินวันหยุด 2025
+                Calendar Holidays 2025
               </h1>
               <p className="text-slate-500">Thailand Holidays</p>
             </div>
@@ -693,7 +693,7 @@ export default function Home() {
                       <div className="w-8 h-8 bg-slate-200 rounded-lg flex items-center justify-center">
                         <span className="text-slate-600">📌</span>
                       </div>
-                      <p className="text-slate-600">ไม่มีวันหยุดในวันนี้</p>
+                      <p className="text-slate-600">No holiday today</p>
                     </div>
                   )}
                 </div>
@@ -703,7 +703,7 @@ export default function Home() {
         </div>
       </div>
       {/* Currency and holiday Card */}
-      </div>
+    </div>
     </div>
   );
 }
